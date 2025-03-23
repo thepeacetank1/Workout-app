@@ -1,0 +1,164 @@
+# Workout App Project Structure
+
+## Architecture Overview
+The Workout App follows a client-server architecture with:
+- Frontend: React with TypeScript, Chakra UI, and Redux Toolkit for state management
+- Backend: Node.js/Express.js REST API with MongoDB database
+- Authentication: JWT-based authentication flow
+
+## Project Structure
+
+```
+workout-app/
+├── backend/                   # Backend Node.js/Express application
+│   ├── src/
+│   │   ├── controllers/       # Request handlers
+│   │   │   ├── userController.js      # User authentication and profile
+│   │   │   ├── workoutController.js   # Workout management
+│   │   │   ├── nutritionController.js # Nutrition tracking
+│   │   │   └── goalController.js      # Goals management
+│   │   │
+│   │   ├── models/           # MongoDB schema definitions
+│   │   │   ├── userModel.js          # User profile schema
+│   │   │   ├── workoutModel.js       # Workout schema
+│   │   │   ├── nutritionModel.js     # Nutrition tracking schema
+│   │   │   └── goalModel.js          # Goals schema
+│   │   │
+│   │   ├── routes/           # API route definitions
+│   │   │   ├── userRoutes.js         # /api/users/* endpoints
+│   │   │   ├── workoutRoutes.js      # /api/workouts/* endpoints
+│   │   │   ├── nutritionRoutes.js    # /api/nutrition/* endpoints
+│   │   │   └── goalRoutes.js         # /api/goals/* endpoints
+│   │   │
+│   │   ├── middleware/       # Express middleware
+│   │   │   └── authMiddleware.js     # JWT authentication middleware
+│   │   │
+│   │   ├── services/         # Business logic layer
+│   │   │   ├── workoutService.js     # Workout-related business logic
+│   │   │   └── nutritionService.js   # Nutrition-related business logic
+│   │   │
+│   │   ├── utils/            # Utility functions
+│   │   │   └── logger.js              # Logging configuration
+│   │   │
+│   │   └── index.js          # Express app entry point
+│   │
+│   ├── .env                  # Environment variables
+│   ├── package.json          # Backend dependencies and scripts
+│   └── node_modules/         # Installed dependencies
+│
+├── frontend/                 # Frontend React application
+│   ├── public/               # Static files
+│   │   ├── index.html        # HTML entry point
+│   │   ├── manifest.json     # PWA manifest
+│   │   └── robots.txt        # Search engine instructions
+│   │
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   │   ├── layout/       # Layout components
+│   │   │   │   ├── Header.tsx          # App header
+│   │   │   │   ├── Sidebar.tsx         # Navigation sidebar
+│   │   │   │   ├── MainLayout.tsx      # Main layout wrapper
+│   │   │   │   └── MobileNav.tsx       # Mobile navigation
+│   │   │   │
+│   │   │   └── pages/        # Page components
+│   │   │       ├── HomePage.tsx        # Landing page
+│   │   │       ├── LoginPage.tsx       # Login page
+│   │   │       ├── RegisterPage.tsx    # Registration page
+│   │   │       ├── DashboardPage.tsx   # User dashboard
+│   │   │       ├── WorkoutsPage.tsx    # Workouts listing
+│   │   │       ├── WorkoutDetailPage.tsx # Workout details
+│   │   │       ├── NutritionPage.tsx   # Nutrition tracking
+│   │   │       ├── GoalsPage.tsx       # Goals management
+│   │   │       └── ProfilePage.tsx     # User profile
+│   │   │
+│   │   ├── store/            # Redux store
+│   │   │   ├── index.ts      # Store configuration
+│   │   │   └── slices/       # Redux Toolkit slices
+│   │   │       ├── authSlice.ts        # Authentication state
+│   │   │       ├── workoutSlice.ts     # Workout state
+│   │   │       ├── nutritionSlice.ts   # Nutrition state
+│   │   │       ├── goalSlice.ts        # Goals state
+│   │   │       └── uiSlice.ts          # UI state
+│   │   │
+│   │   ├── App.tsx           # Main React component
+│   │   ├── index.js          # React entry point
+│   │   └── index.css         # Global styles
+│   │
+│   ├── package.json          # Frontend dependencies and scripts
+│   └── node_modules/         # Installed dependencies
+│
+├── start-server.sh           # Script to start both backend and frontend
+├── restart-server.sh         # Script to restart servers
+├── CLAUDE.md                 # Development guidelines
+├── Checklist.txt             # Deployment checklist
+└── project-structure.txt     # This file
+```
+
+## Data Flow
+
+1. **Authentication Flow**
+   - Frontend sends login/register request to /api/users/login or /api/users/register
+   - Backend authenticates and returns JWT token
+   - Frontend stores token in localStorage
+   - Frontend includes token in Authorization header for subsequent requests
+   - Backend authMiddleware validates token for protected routes
+
+2. **Workout Management Flow**
+   - Frontend sends workout CRUD requests to /api/workouts endpoints
+   - Backend controller processes request and interacts with MongoDB
+   - Data returned to frontend and stored in Redux
+   - UI components read from Redux store and render data
+
+3. **Nutrition Tracking Flow**
+   - Similar to workout flow, using /api/nutrition endpoints
+   - Nutritional data stored in dedicated collection
+   - Frontend displays and allows editing of nutrition data
+
+4. **Goals Management Flow**
+   - Goals created/tracked via /api/goals endpoints
+   - Progress updates sent from frontend
+   - Backend calculates completion status
+
+## API Endpoints
+
+### User Endpoints
+- POST /api/users/register - Create new user
+- POST /api/users/login - Authenticate user
+- GET /api/users/profile - Get user profile
+- PUT /api/users/profile - Update user profile
+
+### Workout Endpoints
+- GET /api/workouts - Get all user workouts
+- GET /api/workouts/:id - Get specific workout
+- POST /api/workouts - Create new workout
+- PUT /api/workouts/:id - Update workout
+- DELETE /api/workouts/:id - Delete workout
+
+### Nutrition Endpoints
+- GET /api/nutrition - Get nutrition entries
+- GET /api/nutrition/:date - Get entries for specific date
+- POST /api/nutrition - Add nutrition entry
+- PUT /api/nutrition/:id - Update nutrition entry
+- DELETE /api/nutrition/:id - Delete nutrition entry
+
+### Goals Endpoints
+- GET /api/goals - Get all user goals
+- GET /api/goals/:id - Get specific goal
+- POST /api/goals - Create new goal
+- PUT /api/goals/:id - Update goal
+- PUT /api/goals/:id/progress - Update goal progress
+- DELETE /api/goals/:id - Delete goal
+
+## State Management
+Redux Toolkit is used for state management with the following slices:
+- authSlice - User authentication state
+- workoutSlice - Workout data and operations
+- nutritionSlice - Nutrition tracking data
+- goalSlice - User goals and progress
+- uiSlice - UI state (sidebar, notifications, etc.)
+
+## Responsive Design
+- Desktop: Full sidebar navigation
+- Mobile: Bottom navigation bar
+- Responsive layouts using Chakra UI's responsive props
+- Adaptive components based on screen size
