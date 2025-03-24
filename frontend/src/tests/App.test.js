@@ -1,35 +1,58 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { ChakraProvider } from '@chakra-ui/react';
+import '@testing-library/jest-dom';
 import { Provider } from 'react-redux';
-import { store } from '../store';
+import createMockStore from './mocks/mockStore';
 import App from '../App';
 
-// Mock React Router's useLocation
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useLocation: () => ({
-    pathname: '/'
-  })
+// Mock the Chakra icons
+jest.mock('@chakra-ui/icons', () => require('./__mocks__/@chakra-ui/icons'));
+
+// Mock react-icons
+jest.mock('react-icons/fa', () => ({
+  FaGoogle: () => <div data-testid="fa-google-icon" />,
+  FaFacebook: () => <div data-testid="fa-facebook-icon" />,
+  FaApple: () => <div data-testid="fa-apple-icon" />,
+  FaUser: () => <div data-testid="fa-user-icon" />,
+  FaDumbbell: () => <div data-testid="fa-dumbbell-icon" />,
+  FaWeight: () => <div data-testid="fa-weight-icon" />,
+  FaUtensils: () => <div data-testid="fa-utensils-icon" />,
+  FaRunning: () => <div data-testid="fa-running-icon" />,
+  FaHeart: () => <div data-testid="fa-heart-icon" />,
+  FaChartLine: () => <div data-testid="fa-chart-line-icon" />,
+  FaCalendarAlt: () => <div data-testid="fa-calendar-alt-icon" />,
+  FaCog: () => <div data-testid="fa-cog-icon" />,
+  FaSignOutAlt: () => <div data-testid="fa-sign-out-alt-icon" />,
+  FaBars: () => <div data-testid="fa-bars-icon" />,
+  FaTimes: () => <div data-testid="fa-times-icon" />
 }));
 
 // Wrapper to provide necessary context providers
-const AllTheProviders = ({ children }) => {
-  return (
+const renderWithProviders = (ui, options = {}) => {
+  const store = createMockStore({
+    auth: {
+      isAuthenticated: false,
+      isLoading: false,
+      user: null
+    },
+    ui: {
+      theme: 'light',
+      sidebarOpen: false,
+      activePage: 'home'
+    }
+  });
+  
+  return render(
     <Provider store={store}>
-      <ChakraProvider>
-        <BrowserRouter>
-          {children}
-        </BrowserRouter>
-      </ChakraProvider>
-    </Provider>
+      {ui}
+    </Provider>,
+    options
   );
 };
 
 describe('App Component', () => {
   test('renders homepage without crashing', () => {
-    render(<App />, { wrapper: AllTheProviders });
+    renderWithProviders(<App />);
     
     // Check that the homepage title is rendered
     const titleElement = screen.getByText(/Track Your Fitness Journey/i);
@@ -37,7 +60,7 @@ describe('App Component', () => {
   });
 
   test('renders login link', () => {
-    render(<App />, { wrapper: AllTheProviders });
+    renderWithProviders(<App />);
     
     // Check that the login link is rendered
     const loginLink = screen.getByText(/Login/i);
@@ -45,7 +68,7 @@ describe('App Component', () => {
   });
 
   test('renders get started link', () => {
-    render(<App />, { wrapper: AllTheProviders });
+    renderWithProviders(<App />);
     
     // Check that the get started button is rendered
     const getStartedButton = screen.getByText(/Get Started/i);
@@ -53,7 +76,7 @@ describe('App Component', () => {
   });
 
   test('renders features section', () => {
-    render(<App />, { wrapper: AllTheProviders });
+    renderWithProviders(<App />);
     
     // Check that the features section is rendered
     const featuresHeading = screen.getByText(/Key Features/i);

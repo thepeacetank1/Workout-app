@@ -1,8 +1,18 @@
+// Import all mocks first to ensure they're available
+import './setupJestMocks';
+
 // Import jest-dom for DOM assertions
-require('@testing-library/jest-dom');
+import '@testing-library/jest-dom';
+
+// The import above should automatically extend Jest's expect
+// No need for manual extension which might be causing issues
+// If we need explicit extension, use the proper import:
+// import * as matchers from '@testing-library/jest-dom/matchers';
+// expect.extend(matchers);
 
 // Import and setup browser mocks
-require('./utils/browser-mocks').setupBrowserMocks();
+import { setupBrowserMocks } from './utils/browser-mocks';
+setupBrowserMocks();
 
 // Configure Jest timeout for all tests
 jest.setTimeout(30000);
@@ -15,7 +25,8 @@ const filterConsoleMessage = (message) =>
   message.includes('act(...) is not supported in production') ||
   message.includes('forwardRef render functions accept exactly two parameters') ||
   message.includes('Inside StrictMode') ||
-  message.includes('Warning: useLayoutEffect does nothing on the server');
+  message.includes('Warning: useLayoutEffect does nothing on the server') ||
+  message.includes('module is not defined');
 
 // Suppress specific console errors and warnings
 const originalConsoleError = console.error;
@@ -59,3 +70,38 @@ global.fetch = jest.fn(() =>
     headers: new Headers(),
   })
 );
+
+// Add a simple test for react-test-renderer
+global.ReactTestRenderer = {
+  create: jest.fn()
+};
+
+// Mock localStorage
+const localStorageMock = (function() {
+  let store = {};
+  return {
+    getItem: jest.fn(key => store[key] || null),
+    setItem: jest.fn((key, value) => {
+      store[key] = value.toString();
+    }),
+    removeItem: jest.fn(key => {
+      delete store[key];
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+    key: jest.fn(index => Object.keys(store)[index]),
+    get length() { return Object.keys(store).length }
+  };
+})();
+
+// Override localStorage and sessionStorage global objects
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+  writable: true
+});
+
+Object.defineProperty(window, 'sessionStorage', {
+  value: localStorageMock,
+  writable: true
+});

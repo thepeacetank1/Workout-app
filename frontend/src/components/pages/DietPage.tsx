@@ -204,7 +204,7 @@ const DietPage: React.FC = () => {
                   userFatGoal={Math.round(mockDietPreferences.calorieGoal * 0.25 / 9)} // 25% of calories from fat
                 />
               ) : (
-                <Box p={4} borderRadius="md" border="1px" borderColor={borderColor}>
+                <Box p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
                   <Heading as="h3" size="md" mb={4}>Diet Plan Overview</Heading>
                   <Text mb={3}>This plan is designed for your {mockDietPreferences.dietType} diet preferences with a budget of ${mockDietPreferences.budgetConstraint} per week.</Text>
                   <Text mb={3}>It includes {mockDietPreferences.mealsPerDay} meals per day with a focus on your preferred cuisines.</Text>

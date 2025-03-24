@@ -64,7 +64,14 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
   
   return (
     <Flex py={2} px={1} alignItems="center" fontSize="sm" color={textColor} mb={4}>
-      <ChakraBreadcrumb separator={separator} spacing="8px">
+ <ChakraBreadcrumb 
+  separator={
+    typeof separator === 'string' || React.isValidElement(separator) 
+      ? separator 
+      : ">"
+  } 
+  spacing="8px"
+>
         {displayItems.map((item, index) => (
           <BreadcrumbItem 
             key={item.path} 

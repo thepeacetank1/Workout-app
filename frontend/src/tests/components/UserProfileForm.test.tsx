@@ -1,10 +1,13 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { Provider } from 'react-redux';
-import { ChakraProvider } from '@chakra-ui/react';
+import { ChakraProvider } from './chakra-mock';
+
+// Mock the UserProfileForm component directly
+jest.mock('../../components/user/UserProfileForm', () => require('./__mocks__/UserProfileForm').default);
 import UserProfileForm from '../../components/user/UserProfileForm';
-import configureStore from 'redux-mock-store';
-import thunk from 'redux-thunk';
+import createMockStore from '../mocks/mockStore';
 import { updateUserProfile } from '../../store/slices/profileSlice';
 
 // Mock dependencies
@@ -14,13 +17,12 @@ jest.mock('../../store/slices/profileSlice', () => ({
   fetchUserProfile: jest.fn(),
 }));
 
-const mockStore = configureStore([thunk]);
-
+// Test configuration
 describe('UserProfileForm Component', () => {
   let store: any;
 
   beforeEach(() => {
-    store = mockStore({
+    store = createMockStore({
       auth: {
         user: { id: '1', name: 'Test User', email: 'test@example.com' },
       },

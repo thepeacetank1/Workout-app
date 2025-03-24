@@ -1,15 +1,27 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom';
 import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
 import DietPage from '../../components/pages/DietPage';
 import createMockStore from '../mocks/mockStore';
+import { ChakraProvider } from '@chakra-ui/react';
 
 // Mock the window.alert
 const mockAlert = jest.fn();
 global.alert = mockAlert;
 
-// Mock the DietPlan component
+// Mock useColorModeValue as it causes issues in tests
+jest.mock('@chakra-ui/react', () => {
+  const originalModule = jest.requireActual('@chakra-ui/react');
+  return {
+    __esModule: true,
+    ...originalModule,
+    useColorModeValue: jest.fn().mockImplementation((lightValue, darkValue) => lightValue)
+  };
+});
+
+// Mock the DietPlan component with a simplified version
 jest.mock('../../components/diet/DietPlan', () => {
   return {
     __esModule: true,
@@ -19,15 +31,10 @@ jest.mock('../../components/diet/DietPlan', () => {
       userProteinGoal,
       userCarbsGoal,
       userFatGoal
-    }: {
-      weeklyPlan: any[];
-      userCalorieGoal: number;
-      userProteinGoal: number;
-      userCarbsGoal: number;
-      userFatGoal: number;
     }) => (
       <div data-testid="diet-plan">
-        <div data-testid="calorie-goal">Calorie Goal: {userCalorieGoal}</div>
+        {/* Use unique identifiers to avoid multiple matches */}
+        <div data-testid="diet-plan-calorie-goal">Calorie Goal: {userCalorieGoal}</div>
         <div data-testid="protein-goal">Protein Goal: {userProteinGoal}g</div>
         <div data-testid="carbs-goal">Carbs Goal: {userCarbsGoal}g</div>
         <div data-testid="fat-goal">Fat Goal: {userFatGoal}g</div>
@@ -44,16 +51,13 @@ jest.mock('../../components/diet/DietPlan', () => {
   };
 });
 
-// Mock the DietPreferences component
+// Mock the DietPreferences component with a simplified version
 jest.mock('../../components/diet/DietPreferences', () => {
   return {
     __esModule: true,
     default: ({ 
       currentPreferences, 
       onSavePreferences
-    }: { 
-      currentPreferences: any;
-      onSavePreferences: (preferences: any) => void; 
     }) => (
       <div data-testid="diet-preferences">
         <div data-testid="diet-type">Diet Type: {currentPreferences.dietType}</div>
@@ -73,79 +77,104 @@ jest.mock('../../components/diet/DietPreferences', () => {
   };
 });
 
-// Create mock store
-const store = createMockStore();
-
 describe('DietPage component', () => {
+  let store;
+  
+  beforeEach(() => {
+    // Create a fresh store for each test
+    store = createMockStore();
+    jest.clearAllMocks();
+  });
+  
   const renderComponent = () => {
     return render(
-      <Provider store={store}>
-        <BrowserRouter>
+      <ChakraProvider>
+        <Provider store={store}>
           <DietPage />
-        </BrowserRouter>
-      </Provider>
+        </Provider>
+      </ChakraProvider>
     );
   };
 
-  it('renders the component correctly', () => {
+  it('renders the component correctly', async () => {
     renderComponent();
     
-    // Check if the main title is rendered
-    expect(screen.getByText('Diet Plan')).toBeInTheDocument();
-    
-    // Check if the tabs are rendered
-    expect(screen.getByRole('tab', { name: 'Your Diet Plan' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Preferences' })).toBeInTheDocument();
+    // Wait for component to fully render
+    await waitFor(() => {
+      // Check if the main title is rendered
+      expect(screen.getByText('Diet Plan')).toBeInTheDocument();
+      
+      // Check if the tabs are rendered - more robust query
+      expect(screen.getByRole('tab', { name: /your diet plan/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /preferences/i })).toBeInTheDocument();
+    });
   });
 
-  it('displays diet plan overview by default', () => {
+  it('displays diet plan overview by default', async () => {
     renderComponent();
     
-    // The diet plan tab should be active by default
-    expect(screen.getByText('Diet Plan Overview')).toBeInTheDocument();
-    
-    // Check if overview information is displayed
-    expect(screen.getByText('This plan is designed for your high-protein diet preferences with a budget of $80 per week.')).toBeInTheDocument();
-    expect(screen.getByText('Monday\'s Meals Preview:')).toBeInTheDocument();
-    
-    // Check if the "View Full Diet Plan" button is displayed
-    expect(screen.getByRole('button', { name: 'View Full Diet Plan' })).toBeInTheDocument();
-    
-    // Check if the "Generate Shopping List" button is displayed
-    expect(screen.getByRole('button', { name: 'Generate Shopping List' })).toBeInTheDocument();
+    // Wait for component to fully render and check assertions
+    await waitFor(() => {
+      // The diet plan tab should be active by default
+      expect(screen.getByText('Diet Plan Overview')).toBeInTheDocument();
+      
+      // Check if overview information is displayed
+      expect(screen.getByText(/this plan is designed for your high-protein diet preferences/i)).toBeInTheDocument();
+      expect(screen.getByText(/monday's meals preview:/i)).toBeInTheDocument();
+      
+      // Check if the buttons are displayed
+      expect(screen.getByRole('button', { name: /view full diet plan/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /generate shopping list/i })).toBeInTheDocument();
+    });
   });
 
-  it('displays full diet plan when clicking the view button', () => {
+  it('displays full diet plan when clicking the view button', async () => {
     renderComponent();
     
-    // Click on the "View Full Diet Plan" button
-    fireEvent.click(screen.getByRole('button', { name: 'View Full Diet Plan' }));
+    // Wait for the button to be available
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /view full diet plan/i })).toBeInTheDocument();
+    });
+    
+    // Click on the "View Full Diet Plan" button using userEvent
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /view full diet plan/i }));
     
     // Check if the full diet plan is displayed
-    expect(screen.getByTestId('diet-plan')).toBeInTheDocument();
-    expect(screen.getByTestId('calorie-goal')).toBeInTheDocument();
-    expect(screen.getByTestId('protein-goal')).toBeInTheDocument();
-    expect(screen.getByTestId('carbs-goal')).toBeInTheDocument();
-    expect(screen.getByTestId('fat-goal')).toBeInTheDocument();
-    
-    // Check if days are displayed
-    expect(screen.getByTestId('day-Monday')).toBeInTheDocument();
-    expect(screen.getByTestId('day-Tuesday')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('diet-plan')).toBeInTheDocument();
+      expect(screen.getByTestId('diet-plan-calorie-goal')).toBeInTheDocument();
+      expect(screen.getByTestId('protein-goal')).toBeInTheDocument();
+      expect(screen.getByTestId('carbs-goal')).toBeInTheDocument();
+      expect(screen.getByTestId('fat-goal')).toBeInTheDocument();
+      
+      // Check if days are displayed
+      expect(screen.getByTestId('day-Monday')).toBeInTheDocument();
+      expect(screen.getByTestId('day-Tuesday')).toBeInTheDocument();
+    });
   });
 
-  it('displays diet preferences when clicking the preferences tab', () => {
+  it('displays diet preferences when clicking the preferences tab', async () => {
     renderComponent();
     
-    // Click on the "Preferences" tab
-    fireEvent.click(screen.getByRole('tab', { name: 'Preferences' }));
+    // Wait for tabs to render
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: /preferences/i })).toBeInTheDocument();
+    });
+    
+    // Click on the "Preferences" tab using userEvent
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('tab', { name: /preferences/i }));
     
     // Check if the diet preferences form is displayed
-    expect(screen.getByTestId('diet-preferences')).toBeInTheDocument();
-    expect(screen.getByTestId('diet-type')).toBeInTheDocument();
-    expect(screen.getByTestId('calorie-goal')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('diet-preferences')).toBeInTheDocument();
+      expect(screen.getByTestId('diet-type')).toBeInTheDocument();
+      expect(screen.getByTestId('calorie-goal')).toBeInTheDocument();
+    });
     
     // Click the save preferences button and check if alert is shown
-    fireEvent.click(screen.getByTestId('save-preferences-button'));
+    await user.click(screen.getByTestId('save-preferences-button'));
     expect(mockAlert).toHaveBeenCalledWith('Diet preferences saved successfully!');
   });
 });

@@ -58,28 +58,55 @@ jest.mock('../../store/slices/authSlice', () => ({
 
 // Create mock store
 const mockStore = configureMockStore([thunk]);
-const store = mockStore({
-  auth: {
-    isAuthenticated: false,
-    isLoading: false,
-    error: null,
-    user: null,
-    token: null
-  }
-});
+const createStore = (initialState = {}) => {
+  return mockStore({
+    auth: {
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      user: null,
+      token: null,
+      ...initialState
+    },
+    // Adding all other likely slices with default states to avoid undefined errors
+    profile: {
+      profile: null,
+      isLoading: false,
+      error: null
+    },
+    workout: {
+      workouts: [],
+      currentWorkout: null,
+      isLoading: false,
+      error: null
+    },
+    ui: {
+      theme: 'light',
+      sidebar: {
+        isOpen: false
+      }
+    }
+  });
+};
+
+const store = createStore();
 
 // Import our component after mocks are set up
-const LoginPage = require('../../components/pages/LoginPage').default;
+import LoginPage from '../../components/pages/LoginPage';
 
 // Setup test wrapper with required providers
-const renderWithProviders = (ui) => {
-  return render(
-    <Provider store={store}>
-      <BrowserRouter>
-        {ui}
-      </BrowserRouter>
-    </Provider>
-  );
+const renderWithProviders = (ui, initialState = {}) => {
+  const store = createStore(initialState);
+  return {
+    ...render(
+      <Provider store={store}>
+        <BrowserRouter>
+          {ui}
+        </BrowserRouter>
+      </Provider>
+    ),
+    store
+  };
 };
 
 describe('LoginPage Component', () => {

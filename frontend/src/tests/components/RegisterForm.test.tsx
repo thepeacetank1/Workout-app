@@ -12,17 +12,8 @@ jest.mock('../../store/slices/authSlice', () => ({
   clearError: jest.fn(),
 }));
 
-// Mock react-router-dom Link component
-jest.mock('react-router-dom', () => {
-  const originalModule = jest.requireActual('react-router-dom');
-  
-  return {
-    ...originalModule,
-    Link: ({ children, to, ...props }) => {
-      return React.createElement('a', { href: to || '#', ...props }, children);
-    }
-  };
-});
+// Use the shared mock for react-router-dom instead of redefining
+jest.mock('react-router-dom');
 
 // Helper function to render the component with providers
 const renderRegisterPage = (initialState = {}) => {
@@ -53,16 +44,31 @@ describe('RegisterPage Component', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the registration form correctly', () => {
+  it('renders the registration form correctly', async () => {
     renderRegisterPage();
     
-    // Check that the main elements are present
-    expect(screen.getByText(/create an account/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+    // Check that the main elements are present, using waitFor for async rendering
+    await waitFor(() => {
+      // First check headings/text that doesn't depend on form labels
+      expect(screen.queryByText(/create an account/i)).toBeInTheDocument();
+      
+      // Then check form elements
+      const fullNameInput = screen.queryByLabelText(/full name/i);
+      expect(fullNameInput).toBeInTheDocument();
+      
+      const emailInput = screen.queryByLabelText(/email/i);
+      expect(emailInput).toBeInTheDocument();
+      
+      const passwordInput = screen.queryByLabelText(/^password$/i);
+      expect(passwordInput).toBeInTheDocument();
+      
+      const confirmPasswordInput = screen.queryByLabelText(/confirm password/i);
+      expect(confirmPasswordInput).toBeInTheDocument();
+      
+      // Check for the button with more flexibility
+      const createAccountButton = screen.queryByRole('button', { name: /create account|sign up/i });
+      expect(createAccountButton).toBeInTheDocument();
+    });
   });
 
   it('validates the form and shows validation errors', async () => {

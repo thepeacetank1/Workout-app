@@ -58,21 +58,42 @@ const theme = extendTheme({
         color: 'gray.800',
       },
     },
-  }
+  },
+  components: {
+    Button: {
+      baseStyle: {
+        fontWeight: 'bold',
+        borderRadius: 'md',
+      },
+      variants: {
+        solid: {
+          bg: 'brand.500',
+          color: 'white',
+          _hover: {
+            bg: 'brand.600',
+          },
+        },
+        outline: {
+          borderColor: 'brand.500',
+          color: 'brand.500',
+        },
+      },
+    },
+  },
 });
 
 // Simple error boundary component
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null, errorInfo: React.ErrorInfo | null}> {
+  constructor(props: {children: React.ReactNode}) {
     super(props);
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error) {
     return { hasError: true };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
     this.setState({ error, errorInfo });
@@ -113,25 +134,71 @@ function App() {
               
               {/* Protected Routes */}
               <Route 
-                path="/app" 
+                path="/dashboard" 
                 element={
                   <ProtectedRoute>
-                    <MainLayout />
+                    <MainLayout>
+                      <DashboardPage />
+                    </MainLayout>
                   </ProtectedRoute>
                 }
-              >
-                <Route index element={<DashboardPage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="goals" element={<Center p={8}><Heading>Goals Page</Heading></Center>} />
-                <Route path="workouts" element={<Center p={8}><Heading>Workouts Page</Heading></Center>} />
-                <Route path="workouts/:id" element={<Center p={8}><Heading>Workout Details</Heading></Center>} />
-                <Route path="nutrition" element={<Center p={8}><Heading>Nutrition Page</Heading></Center>} />
-                <Route path="calendar" element={<Center p={8}><Heading>Calendar Page</Heading></Center>} />
-                <Route path="progress" element={<Center p={8}><Heading>Progress Page</Heading></Center>} />
-                <Route path="settings" element={<Center p={8}><Heading>Settings Page</Heading></Center>} />
-              </Route>
+              />
               
-              {/* Redirect unknown routes to home */}
+              <Route 
+                path="/workouts" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Center p={8}><Heading>Workouts Page</Heading></Center>
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route 
+                path="/workouts/:id" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Center p={8}><Heading>Workout Details</Heading></Center>
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route 
+                path="/nutrition" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Center p={8}><Heading>Nutrition Page</Heading></Center>
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route 
+                path="/progress" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Center p={8}><Heading>Progress Page</Heading></Center>
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route 
+                path="/profile" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <ProfilePage />
+                    </MainLayout>
+                  </ProtectedRoute>
+                }
+              />
+              
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Router>

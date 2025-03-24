@@ -29,20 +29,99 @@ jest.mock('../../components/workout/WorkoutCalendar', () => {
   }
 });
 
-// Mock store actions
+// Mock store actions - making sure they work with thunk middleware
 jest.mock('../../store/slices/workoutSlice', () => ({
-  fetchWorkouts: jest.fn().mockReturnValue({ type: 'workout/fetchWorkouts' }),
-  deleteWorkout: jest.fn().mockReturnValue({ type: 'workout/deleteWorkout' }),
-  getWorkoutSessions: jest.fn().mockReturnValue({ type: 'workout/getWorkoutSessions' }),
+  // These actions now return proper thunk functions
+  fetchWorkouts: jest.fn().mockImplementation(() => {
+    return (dispatch) => {
+      dispatch({ type: 'workout/fetchWorkouts/pending' });
+      return Promise.resolve().then(() => {
+        dispatch({
+          type: 'workout/fetchWorkouts/fulfilled',
+          payload: []
+        });
+        return [];
+      });
+    };
+  }),
+  deleteWorkout: jest.fn().mockImplementation((id) => {
+    return (dispatch) => {
+      dispatch({ type: 'workout/deleteWorkout/pending' });
+      return Promise.resolve().then(() => {
+        dispatch({
+          type: 'workout/deleteWorkout/fulfilled',
+          payload: id
+        });
+        return id;
+      });
+    };
+  }),
+  getWorkoutSessions: jest.fn().mockImplementation(() => {
+    return (dispatch) => {
+      dispatch({ type: 'workout/getWorkoutSessions/pending' });
+      return Promise.resolve().then(() => {
+        dispatch({
+          type: 'workout/getWorkoutSessions/fulfilled',
+          payload: []
+        });
+        return [];
+      });
+    };
+  }),
 }));
+
+// Import the actual component (not mocked)
+import WorkoutPage from '../../components/pages/WorkoutPage';
 
 // Setup tests
 describe('WorkoutPage component', () => {
-  // Import the actual component (not mocked)
-  const WorkoutPage = require('../../components/pages/WorkoutPage').default;
-  
-  const renderWithProviders = (ui) => {
-    const store = createMockStore();
+  const renderWithProviders = (ui: React.ReactElement) => {
+    // Use the shared mock store creator which has thunk middleware properly configured
+    const store = createMockStore({
+      auth: {
+        user: {
+          id: 'test-user-id',
+          name: 'Test User',
+          email: 'testuser@example.com',
+        },
+        token: 'mock-token',
+        isAuthenticated: true,
+        isLoading: false, 
+        error: null
+      },
+      workout: {
+        workouts: [
+          {
+            id: '1',
+            name: 'Full Body Strength',
+            description: 'A complete full body workout focusing on strength',
+            type: 'strength',
+            duration: 45,
+            difficulty: 'intermediate'
+          },
+          {
+            id: '2',
+            name: 'HIIT Cardio',
+            description: 'High-intensity interval training for maximum calorie burn',
+            type: 'cardio',
+            duration: 30,
+            difficulty: 'advanced'
+          },
+          {
+            id: '3',
+            name: 'Yoga Flow',
+            description: 'Gentle yoga flow for flexibility and relaxation',
+            type: 'flexibility',
+            duration: 60,
+            difficulty: 'beginner'
+          }
+        ],
+        sessions: [],
+        isLoading: false,
+        error: null
+      }
+    });
+    
     return render(
       <Provider store={store}>
         {ui}

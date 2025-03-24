@@ -1,38 +1,42 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { Provider } from 'react-redux';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import createMockStore from '../mocks/mockStore';
 
 // Mock the authSlice
-jest.mock('../../store/slices/authSlice', () => ({
-  fetchUserProfile: jest.fn().mockReturnValue({ type: 'auth/fetchUserProfile/pending' }),
-}));
-
-// Mock components for testing
-const ProtectedComponent = () => <div>Protected Content</div>;
-const PublicComponent = () => <div>Public Content</div>;
-const LoadingComponent = () => <div>Loading your dashboard...</div>;
-
-// Create a manual mock version of the Navigate component
-jest.mock('react-router-dom', () => {
-  // Use the actual mock implementation from our mocks directory
-  const routerMock = jest.requireActual('../__mocks__/react-router-dom');
+jest.mock('../../store/slices/authSlice', () => {
+  const fetchUserProfileMock = jest.fn();
   
-  // Customize the Navigate component to work better with our tests
+  // Create a proper thunk-compatible action creator
+  fetchUserProfileMock.mockImplementation(() => {
+    // Return a function for the thunk middleware
+    return function(dispatch) {
+      dispatch({ type: 'auth/fetchUserProfile/pending' });
+      
+      // Return a promise that resolves with the data
+      return Promise.resolve({ id: '1', name: 'Test User', email: 'test@example.com' })
+        .then(userData => {
+          dispatch({ 
+            type: 'auth/fetchUserProfile/fulfilled',
+            payload: userData
+          });
+          return userData;
+        });
+    };
+  });
+  
   return {
-    ...routerMock,
-    Navigate: ({ to }) => {
-      if (to === '/login') {
-        return <PublicComponent />;
-      }
-      return <div data-testid="navigate" data-to={to}>Navigate to {to}</div>;
-    }
+    fetchUserProfile: fetchUserProfileMock
   };
 });
 
+// Mock components for testing
+const ProtectedComponent = () => <div>Protected Content</div>;
+
 // Helper function to render component with different auth states
-const renderProtectedRoute = (customState: any = {}) => {
+const renderProtectedRoute = (customState = {}) => {
   const authState = {
     isAuthenticated: false,
     token: null,
@@ -42,6 +46,7 @@ const renderProtectedRoute = (customState: any = {}) => {
     ...customState
   };
   
+  // Use createMockStore which already has thunk middleware configured
   const store = createMockStore({
     auth: authState
   });

@@ -1,70 +1,151 @@
+// Mock for react-router-dom
 const React = require('react');
 
-// Minimal implementation of useNavigate and useLocation
+const useLocation = jest.fn().mockImplementation(() => {
+  return {
+    pathname: '/',
+    search: '',
+    hash: '',
+    state: { 
+      from: { pathname: '/app' },
+      message: null,
+      redirectPath: null,
+      email: '',
+      formData: {},
+      // Add any other properties needed by tests
+      rememberedEmail: 'test@example.com',
+      rememberedCredentials: JSON.stringify({
+        email: 'test@example.com', 
+        password: 'password123'
+      })
+    },
+    key: '5nvxpbdafa'
+  };
+});
+
 const useNavigate = jest.fn().mockReturnValue(jest.fn());
-const useLocation = jest.fn().mockReturnValue({ pathname: '/', state: null });
+
 const useParams = jest.fn().mockReturnValue({});
-const useRouteMatch = jest.fn().mockReturnValue({ path: '/', url: '/' });
 
-// Router components
-const BrowserRouter = ({ children }) => <div data-testid="browser-router">{children}</div>;
-const Routes = ({ children }) => <div data-testid="routes">{children}</div>;
-const Route = ({ path, element }) => <div data-testid="route" data-path={path}>{element}</div>;
-const MemoryRouter = ({ children, initialEntries }) => (
-  <div data-testid="memory-router" data-initial-entries={JSON.stringify(initialEntries)}>
-    {children}
-  </div>
-);
+const useSearchParams = jest.fn().mockReturnValue([
+  {
+    get: jest.fn(key => null),
+    getAll: jest.fn(() => []),
+    has: jest.fn(() => false),
+    forEach: jest.fn()
+  },
+  jest.fn()
+]);
 
-// Link component that will work with Chakra UI
-const Link = React.forwardRef(({ to, children, ...props }, ref) => {
-  return React.createElement('a', {
-    href: to || '#',
-    ref,
-    'data-testid': 'router-link',
-    ...props
-  }, children);
-});
-Link.displayName = 'Link';
+// Create a PublicComponent for testing redirection
+const PublicComponent = () => React.createElement('div', {}, 'Public Content');
 
-// Navigation components
-const Navigate = ({ to, replace, state }) => (
-  <div data-testid="navigate" data-to={to} data-replace={replace} data-state={JSON.stringify(state)}>
-    Navigate
-  </div>
-);
-
-// Outlet component
-const Outlet = () => <div data-testid="outlet">Outlet Content</div>;
-
-// Create Mock Provider
-const RouterProvider = ({ router }) => (
-  <div data-testid="router-provider">{router.children}</div>
-);
-
-// Mock createBrowserRouter
-const createBrowserRouter = (routes) => ({
-  routes,
-  children: routes.map((route, i) => (
-    <div key={i} data-testid="browser-route" data-path={route.path}>
-      {route.element}
-    </div>
-  ))
+// Customize Navigate for better testing
+const Navigate = jest.fn().mockImplementation(({ to, state, replace }) => {
+  if (to === '/login') {
+    return React.createElement(PublicComponent);
+  }
+  return React.createElement('div', { 
+    'data-testid': 'mock-navigate', 
+    'data-to': to,
+    'data-state': JSON.stringify(state),
+    'data-replace': replace ? 'true' : 'false'
+  }, `Navigate: ${to}`);
 });
 
-// Export all components and hooks
+// Create Link component mock
+const Link = jest.fn().mockImplementation(({ to, children, ...rest }) => {
+  return React.createElement(
+    'a', 
+    { 
+      href: to, 
+      'data-testid': 'mock-link', 
+      'data-to': to,
+      ...rest
+    },
+    children
+  );
+});
+
+// Create NavLink component mock
+const NavLink = jest.fn().mockImplementation(({ to, children, ...rest }) => {
+  return React.createElement(
+    'a', 
+    { 
+      href: to, 
+      'data-testid': 'mock-navlink', 
+      'data-to': to,
+      ...rest
+    },
+    children
+  );
+});
+
+// Create Outlet component mock
+const Outlet = jest.fn().mockImplementation(() => {
+  return React.createElement('div', { 'data-testid': 'mock-outlet' }, 'Outlet Content');
+});
+
+// Create Routes component mock
+const Routes = jest.fn().mockImplementation(({ children }) => {
+  return React.createElement('div', { 'data-testid': 'mock-routes' }, children);
+});
+
+// Create Route component mock
+const Route = jest.fn().mockImplementation(({ path, element }) => {
+  return React.createElement(
+    'div', 
+    { 
+      'data-testid': 'mock-route', 
+      'data-path': path 
+    }, 
+    element
+  );
+});
+
+// Create BrowserRouter component mock
+const BrowserRouter = jest.fn().mockImplementation(({ children }) => {
+  return React.createElement('div', { 'data-testid': 'mock-browser-router' }, children);
+});
+
+// Create Router component mock
+const Router = jest.fn().mockImplementation(({ children }) => {
+  return React.createElement('div', { 'data-testid': 'mock-router' }, children);
+});
+
+// Create useRoutes hook mock
+const useRoutes = jest.fn().mockReturnValue(null);
+
+// Create MemoryRouter component mock
+const MemoryRouter = jest.fn().mockImplementation(({ children, initialEntries }) => {
+  return React.createElement(
+    'div', 
+    { 
+      'data-testid': 'mock-memory-router', 
+      'data-initial-entries': JSON.stringify(initialEntries) 
+    }, 
+    children
+  );
+});
+
+// Export all mocked components and hooks
 module.exports = {
+  // Components
   BrowserRouter,
   Routes,
   Route,
-  Link,
+  Router,
   Navigate,
+  Link,
+  NavLink,
   Outlet,
   MemoryRouter,
-  RouterProvider,
-  createBrowserRouter,
-  useNavigate,
+  PublicComponent,
+  
+  // Hooks
   useLocation,
+  useNavigate,
   useParams,
-  useRouteMatch
+  useRoutes,
+  useSearchParams
 };
